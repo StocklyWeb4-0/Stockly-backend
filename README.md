@@ -25,6 +25,50 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+### Estructura
+backend/
+├── .env                      # Archivo con variables de entorno para la conexión a la base de datos y JWT
+├── .gitignore                # Archivos y carpetas ignorados por Git
+├── .prettierrc               # Configuración de Prettier para formato de código
+├── eslint.config.mjs         # Configuración de ESLint para análisis estático
+├── nest-cli.json             # Configuración del CLI de NestJS
+├── package.json              # Dependencias y scripts de Node.js (incluye @nestjs/passport, passport-jwt, @nestjs/jwt, bcryptjs)
+├── package-lock.json         # Versiones exactas de dependencias instaladas
+├── README.md                 # Documentación del proyecto
+├── tsconfig.json             # Configuración de TypeScript
+├── tsconfig.build.json       # Configuración de compilación TypeScript
+├── src/                     # Código fuente principal
+│   ├── main.ts              # Punto de entrada de la aplicación
+│   ├── app.module.ts        # Módulo raíz de NestJS, configuración de TypeORM, módulos y autenticación
+│   ├── config/              # Configuraciones de la aplicación
+│   │   └── constans.ts      # Constantes para variables de entorno (incluye variables JWT_SECRET, JWT_EXPIRES_IN)
+│   ├── modules/             # Módulos organizados por funcionalidad
+│   │   ├── auth/            # Módulo de autenticación
+│   │   │   ├── auth.module.ts
+│   │   │   ├── auth.controller.ts   # Rutas: POST /auth/login, POST /auth/register, GET /auth/me
+│   │   │   ├── auth.service.ts      # Lógica de autenticación, creación y validación de JWT
+│   │   │   ├── jwt.strategy.ts      # Estrategia JWT para Passport
+│   │   │   ├── jwt-auth.guard.ts    # Guard para proteger rutas privadas
+│   │   │   ├── local.strategy.ts    # Estrategia local para login (opcional)
+│   │   │   └── dto/                 # DTOs para login, registro, etc.
+│   │   ├── users/           # Módulo de usuarios
+│   │   │   ├── users.module.ts
+│   │   │   ├── users.controller.ts
+│   │   │   ├── users.service.ts
+│   │   │   └── dto/
+│   │   └── products/        # Módulo de productos
+│   │       ├── products.module.ts
+│   │       ├── products.controller.ts
+│   │       ├── products.service.ts
+│   │       └── dto/
+│   ├── entities/            # Entidades TypeORM con relaciones y normalización
+│   │   ├── user.entity.ts
+│   │   ├── product.entity.ts
+│   │   └── order.entity.ts
+├── test/                    # Pruebas end-to-end
+│   ├── app.e2e-spec.ts
+│   └── jest-e2e.json
+
 ## Project setup
 
 ```bash
