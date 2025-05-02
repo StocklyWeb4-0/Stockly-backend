@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, ManyToMany, JoinTable } from 'typeorm';
 import { Rol } from './rol.entity';
 import { People } from './people.entity';
 
@@ -8,19 +8,24 @@ export class Usuario {
   id: number;
 
   @Column()
-  nombre: string;
+  name: string;
 
   @Column({ unique: true })
-  correo: string;
+  email: string;
 
   @Column()
-  contraseña: string;
+  password: string;
 
   @Column({ default: true })
-  activo: boolean;
+  active: boolean;
 
-  @ManyToOne(() => Rol, (rol) => rol.usuarios)
-  rol: Rol;
+  @ManyToMany(() => Rol, (rol) => rol.usuarios)
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: { name: 'user_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' },
+  })
+  roles: Rol[];
 
   @OneToOne(() => People, (people) => people.usuario)
   people: People;

@@ -1,12 +1,10 @@
-import { Usuario } from './entities/user.entity';
-import { Rol } from './entities/rol.entity';
-import { People } from './entities/people.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DB_DATABASE, DB_HOST, DB_PASSWORD, DB_PORT, DB_USER } from './config/constans';
+import { DB_DATABASE, DB_HOST, DB_PASSWORD, DB_PORT, DB_USER, JWT_SECRET } from './config/constans';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Module } from '@nestjs/common';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -23,12 +21,14 @@ import { Module } from '@nestjs/common';
         username: configService.get<string>(DB_USER),
         password: configService.get<string>(DB_PASSWORD),
         database: configService.get<string>(DB_DATABASE),
-        entities: [__dirname + '/*/.entity{.ts,.js}'], // name.entity.ts
+        secretkey: configService.get<string>(JWT_SECRET), // secret key || token
+        entities: [__dirname + '/**/*.entity{.ts,.js}'], // name.entity.ts
         synchronize: true,
         logging: false,
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
