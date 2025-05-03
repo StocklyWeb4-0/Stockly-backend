@@ -19,7 +19,7 @@ export class Usuario {
   @Column({ default: true })
   active: boolean;
 
-  @ManyToMany(() => Rol, (rol) => rol.usuarios)
+  @ManyToMany(() => Rol, (rol) => rol.users)
   @JoinTable({
     name: 'user_roles',
     joinColumn: { name: 'user_id', referencedColumnName: 'id' },

@@ -3,23 +3,17 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuario } from '../../entities/user.entity';
+import { Rol } from '../../entities/rol.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { config } from 'process';
+import { RolesModule } from '../roles/roles.module';
 
-/**
- * Módulo de autenticación que configura:
- * - TypeOrmModule para la entidad Usuario
- * - PassportModule para estrategias de autenticación
- * - JwtModule para manejo de tokens JWT con configuración de secreto y expiración
- * Provee AuthService y JwtStrategy, y expone AuthService para otros módulos.
- * Controlador AuthController maneja las rutas de autenticación.
- */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Usuario]),
+    TypeOrmModule.forFeature([Usuario, Rol]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -29,6 +23,7 @@ import { config } from 'process';
       signOptions: { expiresIn: '1h' },
       }),
     }),
+    RolesModule,
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
