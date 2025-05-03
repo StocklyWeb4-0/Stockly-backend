@@ -7,6 +7,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RolesModule } from './modules/roles/roles.module';
     AuthModule,
     ProductsModule,
     RolesModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
