@@ -1,0 +1,59 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Usuario } from '../../entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcryptjs';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(Usuario)
+    private readonly userRepository: Repository<Usuario>,
+  ) {}
+
+  async findAll(): Promise<Usuario[]> {
+    return this.userRepository.find({ relations: ['roles'] });
+  }
+
+  async findOne(id: number): Promise<Usuario> {
+    const user = await this.userRepository.findOne({ where: { id }, relations: ['roles'] });
+    if (!user) {
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    }
+    return user;
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<Usuario> {
+    const user = new Usuario();
+    user.name = createUserDto.name;
+    user.email = createUserDto.email;
+    user.password = await bcrypt.hash(createUserDto.password, 10);
+    user.active = createUserDto.active ?? true;
+    return this.userRepository.save(user);
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<Usuario> {
+    const user = await this.findOne(id);
+    if (updateUserDto.name !== undefined) {
+      user.name = updateUserDto.name;
+    }
+    if (updateUserDto.email !== undefined) {
+      user.email = updateUserDto.email;
+    }
+    if (updateUserDto.password !== undefined) {
+      user.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+    if (updateUserDto.active !== undefined) {
+      user.active = updateUserDto.active;
+    }
+    return this.userRepository.save(user);
+  }
+
+  async remove(id: number): Promise<void> {
+    const user = await this.findOne(id);
+    user.active = false;
+    await this.userRepository.save(user);
+  }
+}
