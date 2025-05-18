@@ -18,7 +18,7 @@ export class ProductsController {
     return this.productsService.create(createProductDto);
   }
 
-  @Get()
+  @Get() //proteger
   findAll() {
     return this.productsService.findAll();
   }

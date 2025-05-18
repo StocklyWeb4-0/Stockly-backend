@@ -1,10 +1,10 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Usuario } from '../../entities/user.entity';
+import { Usuario } from '../users/entities/users.entity';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { Rol } from '../../entities/rol.entity';
+import { Rol } from '../roles/entities/role.entity';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +16,29 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(name: string, email: string, password: string): Promise<Usuario> {
+  async initAdmin(): Promise<Usuario> {
+    const usersCount = await this.usuarioRepository.count();
+    if (usersCount > 0) {
+      throw new BadRequestException('Ya existen usuarios creados');
+    }
+    const adminRole = await this.rolesRepository.findOne({ where: { name: 'admin' } });
+    if (!adminRole) {
+      throw new NotFoundException('Rol admin no encontrado');
+    }
+    const defaultAdminEmail = 'admin@example.com';
+    const defaultAdminPassword = 'admin123'; // Puedes cambiar esta contraseña por defecto
+    const hashedPassword = await bcrypt.hash(defaultAdminPassword, 10);
+    const newAdmin = this.usuarioRepository.create({
+      name: 'Administrador',
+      email: defaultAdminEmail,
+      password: hashedPassword,
+      active: true,
+      roles: [adminRole],
+    });
+    return this.usuarioRepository.save(newAdmin);
+  }
+
+  /*async register(name: string, email: string, password: string): Promise<Usuario> {
     const userExists = await this.usuarioRepository.findOne({ where: { email } });
     if (userExists) {
       throw new UnauthorizedException('El correo ya está registrado');
@@ -30,6 +52,7 @@ export class AuthService {
     });
     return this.usuarioRepository.save(newUser);
   }
+*/
 
   async validateUser(email: string, password: string): Promise<Usuario> {
     const user = await this.usuarioRepository.findOne({ where: { email }, relations: ['roles'] });
@@ -52,24 +75,5 @@ export class AuthService {
 
   async getUserById(id: number): Promise<Usuario | null> {
     return this.usuarioRepository.findOne({ where: { id }, relations: ['roles'] });
-  }
-
-  async assignRoleToUser(userId: number, roleId: number): Promise<Usuario> {
-    const user = await this.usuarioRepository.findOne({ where: { id: userId }, relations: ['roles'] });
-    if (!user) {
-      throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
-    }
-    const role = await this.rolesRepository.findOne({ where: { id: roleId } });
-    if (!role) {
-      throw new NotFoundException(`Rol con id ${roleId} no encontrado`);
-    }
-    if (!user.roles) {
-      user.roles = [];
-    }
-    if (!user.roles.find(r => r.id === role.id)) {
-      user.roles.push(role);
-      await this.usuarioRepository.save(user);
-    }
-    return user;
   }
 }
