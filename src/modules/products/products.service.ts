@@ -29,6 +29,23 @@ export class ProductsService {
     return product;
   }
 
+  async findByCode(code: string): Promise<Product> {
+    const product = await this.productRepository.findOneBy({ code });
+    if (!product) {
+      throw new NotFoundException(`Producto con código ${code} no encontrado`);
+    }
+    return product;
+  }
+
+  async reduceStock(id: number, quantity: number): Promise<void> {
+    const product = await this.findOne(id);
+    if (product.stock < quantity) {
+      throw new ForbiddenException(`Stock insuficiente para el producto ${product.name}`);
+    }
+    product.stock -= quantity;
+    await this.productRepository.save(product);
+  }
+
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
     const product = await this.findOne(id);
     Object.assign(product, updateProductDto);
