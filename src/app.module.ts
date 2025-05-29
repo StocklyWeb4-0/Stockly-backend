@@ -12,6 +12,10 @@ import { SalesModule } from './modules/sales/sales.module';
 import { SalesDetailModule } from './modules/sales-detail/sales-detail.module';
 import { SaleStatusModule } from './modules/sale-status/sale-status.module';
 import { PaymentTypesModule } from './modules/payment-types/payment-types.module';
+import { CustomersModule } from './modules/customers/customers.module';
+import { CreditsModule } from './modules/credits/credits.module';
+import { StatusCreditsModule } from './modules/status-credits/status-credits.module';
+import { PaymentsCreditsModule } from './modules/payments-credits/payments-credits.module';
 
 @Module({
   imports: [
@@ -43,6 +47,10 @@ import { PaymentTypesModule } from './modules/payment-types/payment-types.module
     SalesDetailModule,
     SaleStatusModule,
     PaymentTypesModule,
+    CustomersModule,
+    CreditsModule,
+    StatusCreditsModule,
+    PaymentsCreditsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

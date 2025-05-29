@@ -21,7 +21,7 @@ export class Product {
   @Column('int', { default: 0 })
   stock: number;
 
-  @Column({ nullable: true })
+  @Column({nullable: false})
   idCategory?: number;
 
   @ManyToOne(() => ProductCategory)

@@ -1,29 +1,35 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, NotFoundException, BadRequestException } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../roles/roles.decorator';
+import { Role } from '../roles/role.enum';
+import { RolesGuard } from '../roles/roles.guard';
 
-@Controller('ventas')
+@Controller('sale')
+@UseGuards(JwtAuthGuard) // Protege todas las rutas con el guard de JWT
+@Roles(Role.ADMIN, Role.CAJERO)
+@UseGuards(RolesGuard)
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createSaleDto: CreateSaleDto, @Request() req) {
     const user = req.user;
     return this.salesService.create(createSaleDto, user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // buscar venta por fecha
   @Get()
   findAll(@Query() query) {
-    // Aquí se pueden implementar filtros por fecha o usuario si se desea
-    return this.salesService.findAll();
+    const { date, userId } = query;
+    return this.salesService.findAll({ date, userId });
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.salesService.findOne(+id);
   }
+
+ // generar factura
 }

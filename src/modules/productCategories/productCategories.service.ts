@@ -40,6 +40,9 @@ export class ProductCategoriesService {
 
   async remove(id: number): Promise<void> {
     const category = await this.findOne(id);
+    if (!category) {
+      throw new NotFoundException(`Categoría con id ${id} no encontrada`);
+    }
     await this.categoryRepository.remove(category);
   }
 }

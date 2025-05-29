@@ -1,8 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { SalesDetailService } from './sales-detail.service';
 import { CreateSalesDetailDto } from './dto/create-sales-detail.dto';
 import { UpdateSalesDetailDto } from './dto/update-sales-detail.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../roles/roles.guard';
+import { Roles } from '../roles/roles.decorator';
+import { Role } from '../roles/role.enum';
 
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.CAJERO)
 @Controller('sales-detail')
 export class SalesDetailController {
   constructor(private readonly salesDetailService: SalesDetailService) {}
@@ -31,4 +38,6 @@ export class SalesDetailController {
   remove(@Param('id') id: string) {
     return this.salesDetailService.remove(+id);
   }
+
+  // VERIFICAR SI ESTA PUEDE SER LA FACTURA
 }
