@@ -1,24 +1,45 @@
-import { Injectable, NotFoundException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, UnauthorizedException, Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateSaleDto } from './dto/create-sale.dto';
-import { Sale, SaleStatus } from './entities/sale.entity'; // Import SaleStatus
+import { Sale } from './entities/sale.entity';
+import { SaleStatus } from '../sale-status/entities/sale-status.entity';
 import { SalesDetail } from '../sales-detail/entities/sales-detail.entity';
 import { ProductsService } from '../products/products.service';
 import { Usuario } from '../users/entities/users.entity';
+import { CreditsService } from '../credits/credits.service';
+import { StatusCreditsService } from '../status-credits/status-credits.service';
+import { PaymentType } from '../payment-types/entities/payment-type.entity';
+import { Customer } from '../customers/entities/customer.entity';
 
 @Injectable()
 export class SalesService {
+  private readonly logger = new Logger(SalesService.name);
+
   constructor(
     @InjectRepository(Sale)
     private readonly saleRepository: Repository<Sale>,
+
     @InjectRepository(SalesDetail)
     private readonly salesDetailRepository: Repository<SalesDetail>,
+
+    @InjectRepository(SaleStatus)
+    private readonly saleStatusRepository: Repository<SaleStatus>,
+
+    @InjectRepository(PaymentType)
+    private readonly paymentTypeRepository: Repository<PaymentType>,
+
+    @InjectRepository(Customer)
+    private readonly customerRepository: Repository<Customer>,
+
     private readonly productsService: ProductsService,
+    private readonly creditsService: CreditsService,
+    private readonly statusCreditsService: StatusCreditsService,
   ) {}
 
   async create(createSaleDto: CreateSaleDto, user: Usuario): Promise<Sale> {
-    const { products, paymentType } = createSaleDto;
+    const { products, paymentType, saleStatusId, customerId } = createSaleDto;
 
     if (!user) {
       throw new UnauthorizedException('Usuario no autenticado');
@@ -27,9 +48,12 @@ export class SalesService {
     let total = 0;
     const salesDetails: SalesDetail[] = [];
 
+    // Validar stock y calcular totales
     for (const item of products) {
       const product = await this.productsService.findByCode(item.code);
-
+      if (!product) {
+        throw new NotFoundException(`Producto con código ${item.code} no encontrado`);
+      }
       if (product.stock < item.quantity) {
         throw new ForbiddenException(`Stock insuficiente para el producto ${product.name}`);
       }
@@ -51,12 +75,64 @@ export class SalesService {
     sale.total = Number(total.toFixed(2));
     sale.user = user;
     sale.paymentType = paymentType;
-    sale.status = SaleStatus.COMPLETED;
     sale.details = salesDetails;
+
+    if (saleStatusId) {
+      const status = await this.saleStatusRepository.findOneBy({ id: saleStatusId });
+      if (!status) {
+        throw new NotFoundException(`Estado de venta con id ${saleStatusId} no encontrado`);
+      }
+      sale.status = status;
+    } else {
+      const defaultStatus = await this.saleStatusRepository.findOneBy({});
+      if (!defaultStatus) {
+        throw new NotFoundException('No hay estados de venta definidos');
+      }
+      sale.status = defaultStatus;
+    }
+
+    if (customerId) {
+      sale.customer = { id: customerId } as any;
+    }
 
     const savedSale = await this.saleRepository.save(sale);
 
-    // Reducir stock después de guardar la venta
+    // Si es crédito y hay un cliente válido, registrar crédito
+    // busca de manera dinamica el id de Credito
+    const creditPaymentType = await this.paymentTypeRepository.findOne({
+      where: { name: 'Credito' },
+    });
+
+    if (
+      creditPaymentType &&
+      paymentType.id === creditPaymentType.id &&
+      customerId
+    ) {
+      //customerEmail sale with credits
+      const customer = await this.customerRepository.findOne({ where: { id: customerId } });
+
+      if(!customer){throw new NotFoundException(`Cliente con id ${customerId} no encontrado`)}
+
+      // Actualizar la ecnta con el correo del cliente
+      await this.saleRepository.update(savedSale.id, {
+        customerEmail: customer.email,
+      })
+
+      const pendingStatus = await this.statusCreditsService.findAll().then((statuses) =>
+        statuses.find((status) => status.name.toLowerCase() === 'pendiente')
+      );
+
+      await this.creditsService.create({
+        customer: { id: customerId },
+        sale: { id: savedSale.id },
+        total: total,
+        amount: total,
+        paymentDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        statusCredit: pendingStatus ? { id: pendingStatus.id } : { id: 0 },
+      });
+    }
+
+    // Reducir stock
     for (const item of products) {
       const product = await this.productsService.findByCode(item.code);
       await this.productsService.reduceStock(product.id, item.quantity);
@@ -65,8 +141,20 @@ export class SalesService {
     return savedSale;
   }
 
-  async findAll(): Promise<Sale[]> {
-    return this.saleRepository.find({ relations: ['user', 'details', 'details.product'] });
+  async findAll(filters?: { date?: string; userId?: string }): Promise<Sale[]> {
+    const queryBuilder = this.saleRepository.createQueryBuilder('sale')
+      .leftJoinAndSelect('sale.user', 'user')
+      .leftJoinAndSelect('sale.details', 'details')
+      .leftJoinAndSelect('details.product', 'product');
+
+    if (filters?.date) {
+      queryBuilder.andWhere('DATE(sale.date) = :date', { date: filters.date });
+    }
+    if (filters?.userId) {
+      queryBuilder.andWhere('user.id = :userId', { userId: filters.userId });
+    }
+
+    return queryBuilder.getMany();
   }
 
   async findOne(id: number): Promise<Sale> {
@@ -74,6 +162,7 @@ export class SalesService {
       where: { id },
       relations: ['user', 'details', 'details.product'],
     });
+
     if (!sale) {
       throw new NotFoundException(`Venta con id ${id} no encontrada`);
     }

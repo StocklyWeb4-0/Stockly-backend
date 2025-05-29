@@ -1,9 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { SaleStatusService } from './sale-status.service';
 import { CreateSaleStatusDto } from './dto/create-sale-status.dto';
 import { UpdateSaleStatusDto } from './dto/update-sale-status.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../roles/roles.guard';
+import { Role } from '../roles/role.enum';
+import { Roles } from '../roles/roles.decorator';
 
 @Controller('sale-status')
+@UseGuards(JwtAuthGuard)
+@UseGuards(RolesGuard)
+@Roles(Role.ADMIN)
 export class SaleStatusController {
   constructor(private readonly saleStatusService: SaleStatusService) {}
 

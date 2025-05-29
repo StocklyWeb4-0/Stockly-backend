@@ -1,26 +1,52 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSalesDetailDto } from './dto/create-sales-detail.dto';
 import { UpdateSalesDetailDto } from './dto/update-sales-detail.dto';
+import { SalesDetail } from './entities/sales-detail.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class SalesDetailService {
-  create(createSalesDetailDto: CreateSalesDetailDto) {
-    return 'This action adds a new salesDetail';
+  constructor(
+    @InjectRepository(SalesDetail)
+    private readonly salesDetailRepository: Repository<SalesDetail>,
+  ) {}
+
+  // probar al hacer una 'sale'
+  async create(createSalesDetailDto: CreateSalesDetailDto) {
+    const salesDetail = this.salesDetailRepository.create(createSalesDetailDto);
+    return this.salesDetailRepository.save(salesDetail);
   }
 
-  findAll() {
-    return `This action returns all salesDetail`;
+  async findAll() {
+    return this.salesDetailRepository.find()
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} salesDetail`;
+  async findOne(id: number) {
+    const salesDetail = await this.salesDetailRepository.findOneBy({id})
+    if (!salesDetail) {
+      throw new NotFoundException(`Sales detail with id ${id} not found`);
+    }
+    return salesDetail;
   }
 
-  update(id: number, updateSalesDetailDto: UpdateSalesDetailDto) {
-    return `This action updates a #${id} salesDetail`;
+  // probar al crear una 'sale'
+  async update(id: number, updateSalesDetailDto: UpdateSalesDetailDto) {
+    const salesDetail = await this.salesDetailRepository.findOneBy({id});
+    if (!salesDetail) {
+      throw new NotFoundException(`Sales detail with id ${id} not found`);
+    }
+     await this.salesDetailRepository.update(id, updateSalesDetailDto);
+    return salesDetail;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} salesDetail`;
+  // probar al crear una 'sale'
+  async remove(id: number) {
+    const salesDetail = await this.salesDetailRepository.findOneBy({id});
+    if (!salesDetail) {
+      throw new NotFoundException(`Sales detail with id ${id} not found`);
+    }
+    await this.salesDetailRepository.remove(salesDetail);
+    return salesDetail;
   }
 }

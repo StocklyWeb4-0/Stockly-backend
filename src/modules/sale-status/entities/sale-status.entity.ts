@@ -11,5 +11,4 @@ export class SaleStatus {
 
   @OneToMany(() => Sale, sale => sale.status)
   sales: Sale[];
-  static COMPLETED: SaleStatus;
 }
