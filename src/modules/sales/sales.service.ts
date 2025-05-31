@@ -12,6 +12,7 @@ import { CreditsService } from '../credits/credits.service';
 import { StatusCreditsService } from '../status-credits/status-credits.service';
 import { PaymentType } from '../payment-types/entities/payment-type.entity';
 import { Customer } from '../customers/entities/customer.entity';
+import { InvoicesService } from '../invoices/invoices.service';
 
 @Injectable()
 export class SalesService {
@@ -36,6 +37,7 @@ export class SalesService {
     private readonly productsService: ProductsService,
     private readonly creditsService: CreditsService,
     private readonly statusCreditsService: StatusCreditsService,
+    private readonly invoicesService: InvoicesService,
   ) {}
 
   async create(createSaleDto: CreateSaleDto, user: Usuario): Promise<Sale> {
@@ -97,6 +99,10 @@ export class SalesService {
 
     const savedSale = await this.saleRepository.save(sale);
 
+    // Guardar factura en invoices
+    const filePath = await this.invoicesService.saveInvoiceFile(savedSale.id);
+    await this.invoicesService.createInvoiceRecord(savedSale.id, filePath);
+
     // Si es crédito y hay un cliente válido, registrar crédito
     // busca de manera dinamica el id de Credito
     const creditPaymentType = await this.paymentTypeRepository.findOne({
@@ -138,7 +144,45 @@ export class SalesService {
       await this.productsService.reduceStock(product.id, item.quantity);
     }
 
+    // Enviar factura por correo solo si es venta a crédito y hay email del cliente
+    if (
+      creditPaymentType &&
+      paymentType.id === creditPaymentType.id &&
+      sale.customerEmail
+    ) {
+      try {
+        await this.invoicesService.sendInvoiceEmail(savedSale.id, sale.customerEmail);
+        this.logger.log(`Factura enviada por correo a ${sale.customerEmail} para la venta ${savedSale.id}`);
+      } catch (error) {
+        this.logger.error(`Error al enviar factura por correo para la venta ${savedSale.id}: ${error.message}`);
+      }
+    }
+    // Para ventas no a crédito, la factura se puede enviar opcionalmente por correo (no implementado aquí)
+
     return savedSale;
+  }
+
+  async resendInvoice(saleId: number): Promise<{ success: boolean; message: string }> {
+    const sale = await this.saleRepository.findOne({
+      where: { id: saleId },
+      relations: ['customer', 'user', 'details', 'details.product'],
+    });
+
+    if (!sale) {
+      throw new NotFoundException('Venta no encontrada');
+    }
+
+    if (!sale.customerEmail) {
+      return { success: false, message: 'No se encontró correo electrónico del cliente' };
+    }
+
+    try {
+      const result = await this.invoicesService.sendInvoiceEmail(saleId, sale.customerEmail);
+      return result;
+    } catch (error) {
+      this.logger.error(`Error al reenviar factura para la venta ${saleId}: ${error.message}`);
+      return { success: false, message: 'Error al reenviar la factura' };
+    }
   }
 
   async findAll(filters?: { date?: string; userId?: string }): Promise<Sale[]> {

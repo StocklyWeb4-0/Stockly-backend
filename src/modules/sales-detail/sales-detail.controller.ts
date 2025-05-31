@@ -38,6 +38,4 @@ export class SalesDetailController {
   remove(@Param('id') id: string) {
     return this.salesDetailService.remove(+id);
   }
-
-  // VERIFICAR SI ESTA PUEDE SER LA FACTURA
 }
