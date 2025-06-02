@@ -37,6 +37,17 @@ export class ProductsService {
     return product;
   }
 
+  //buscar por nombre o parte del nombre
+  async findByName(filters?: {name: string}): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder('product')
+
+  if (filters?.name) {
+    queryBuilder.andWhere('product.name LIKE :name', { name: `%${filters.name}%` });
+  }
+
+  return queryBuilder.getMany();
+  }
+
   async reduceStock(id: number, quantity: number): Promise<void> {
     const product = await this.findOne(id);
     if (product.stock < quantity) {

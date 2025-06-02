@@ -190,7 +190,7 @@ export class SalesService {
     }
   }
 
-  // factura por fecha y idUser
+  // facturas por fecha y idUser
   async findAll(filters?: { date?: string; userId?: string }): Promise<Sale[]> {
     const queryBuilder = this.saleRepository.createQueryBuilder('sale')
       .leftJoinAndSelect('sale.user', 'user')
