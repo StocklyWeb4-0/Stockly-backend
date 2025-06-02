@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alerta de Stock Bajo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #dc3545;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .product-info {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .footer {
+            font-size: 12px;
+            color: #777777;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Alerta de Stock Bajo</h1>
+        <p>Estimado/a,</p>
+        <p>Le informamos que el stock del siguiente producto está bajo y requiere atención inmediata:</p>
+        <div class="product-info">
+            <strong>Producto:</strong> {{name}}<br />
+            <strong>Stock actual:</strong> {{stock}} unidades
+        </div>
+        <p>Por favor, considere reabastecer este producto para evitar interrupciones en las ventas.</p>
+        <div class="footer">
+            &copy; {{year}} Stockly. Todos los derechos reservados.
+        </div>
+    </div>
+</body>
+</html>

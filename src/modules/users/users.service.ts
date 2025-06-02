@@ -1,16 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Usuario } from '../../entities/user.entity';
+import { Repository, In } from 'typeorm';
+import { Usuario } from './entities/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
+import { Rol } from '../roles/entities/role.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(Usuario)
     private readonly userRepository: Repository<Usuario>,
+    @InjectRepository(Rol)
+    private readonly roleRepository: Repository<Rol>,
   ) {}
 
   async findAll(): Promise<Usuario[]> {
@@ -31,6 +34,12 @@ export class UsersService {
     user.email = createUserDto.email;
     user.password = await bcrypt.hash(createUserDto.password, 10);
     user.active = createUserDto.active ?? true;
+
+    const roles = await this.roleRepository.find({
+      where: { id: In(createUserDto.roles) },
+    });
+    user.roles = roles;
+
     return this.userRepository.save(user);
   }
 
@@ -47,6 +56,12 @@ export class UsersService {
     }
     if (updateUserDto.active !== undefined) {
       user.active = updateUserDto.active;
+    }
+    if (updateUserDto.roles !== undefined) {
+      const roles = await this.roleRepository.find({
+        where: { id: In(updateUserDto.roles) },
+      });
+      user.roles = roles;
     }
     return this.userRepository.save(user);
   }

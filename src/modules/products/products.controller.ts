@@ -5,39 +5,39 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
+import { Role } from '../roles/role.enum';
 
 @Controller('products')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  @Roles('admin')
-  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
   }
 
   @Get()
+  @Roles(Role.ADMIN, Role.CAJERO)
   findAll() {
     return this.productsService.findAll();
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.CAJERO)
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);
   }
 
   @Put(':id')
-  @Roles('admin')
-  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productsService.update(+id, updateProductDto);
   }
 
   @Delete(':id')
-  @Roles('admin')
-  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
     return this.productsService.remove(+id);
   }

@@ -8,6 +8,16 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { UsersModule } from './modules/users/users.module';
+import { SalesModule } from './modules/sales/sales.module';
+import { SalesDetailModule } from './modules/sales-detail/sales-detail.module';
+import { SaleStatusModule } from './modules/sale-status/sale-status.module';
+import { PaymentTypesModule } from './modules/payment-types/payment-types.module';
+import { CustomersModule } from './modules/customers/customers.module';
+import { CreditsModule } from './modules/credits/credits.module';
+import { StatusCreditsModule } from './modules/status-credits/status-credits.module';
+import { PaymentsCreditsModule } from './modules/payments-credits/payments-credits.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
+import { EmailsModule } from './modules/emails/emails.module';
 
 @Module({
   imports: [
@@ -35,6 +45,16 @@ import { UsersModule } from './modules/users/users.module';
     ProductsModule,
     RolesModule,
     UsersModule,
+    SalesModule,
+    SalesDetailModule,
+    SaleStatusModule,
+    PaymentTypesModule,
+    CustomersModule,
+    CreditsModule,
+    StatusCreditsModule,
+    PaymentsCreditsModule,
+    InvoicesModule,
+    EmailsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
