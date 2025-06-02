@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Sale } from '../sales/entities/sale.entity';
 import { Repository } from 'typeorm';
 import { createInvoicePdf } from './pdf-generator';
-// import * as nodemailer from 'nodemailer';
-// import { MailOptions } from 'nodemailer/lib/json-transport';
 import { Invoice } from './entities/invoice.entity';
 import { join } from 'path';
 import { promises as fs } from 'fs';
@@ -13,7 +11,6 @@ import { CustomersService } from '../customers/customers.service';
 
 @Injectable()
 export class InvoicesService {
-  // private transporter;
 
   constructor(
     @InjectRepository(Sale)
@@ -25,6 +22,7 @@ export class InvoicesService {
   ) {}
 
 
+  // genera pdf a partir de la venta
   async generatePdf(saleId: number): Promise<Buffer> {
     const sale = await this.saleRepository.findOne({
       where: { id: saleId },
@@ -38,6 +36,7 @@ export class InvoicesService {
     return await createInvoicePdf(sale);
   }
 
+  // Guardar archivo de factura
   async saveInvoiceFile(saleId: number): Promise<string> {
     const pdfBuffer = await this.generatePdf(saleId);
     const invoicesDir = join(process.cwd(), 'invoices');
@@ -46,6 +45,7 @@ export class InvoicesService {
     } catch (error) {
       throw new InternalServerErrorException('Error al crear directorio de facturas');
     }
+    // nombre con el que se guardan
     const filePath = join(invoicesDir, `Factura_${saleId}.pdf`);
     try {
       await fs.writeFile(filePath, pdfBuffer);
@@ -66,6 +66,7 @@ export class InvoicesService {
     return this.invoiceRepository.save(invoice);
   }
 
+  //Envio posterior de Factura por email
   async sendInvoiceEmail(saleId: number, email?: string): Promise<{ success: boolean; message: string }> {
     const sale = await this.saleRepository.findOne({
       where: { id: saleId },
