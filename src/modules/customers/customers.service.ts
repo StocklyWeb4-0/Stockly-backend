@@ -30,6 +30,10 @@ export class CustomersService {
     return customer;
   }
 
+  async findByEmail(email: string): Promise<Customer | null> {
+    return this.customerRepository.findOneBy({ email });
+  }
+
   async update(id: number, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
     const customer = await this.customerRepository.findOneBy({id})
     if(!customer) {

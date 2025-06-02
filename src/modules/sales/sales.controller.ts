@@ -31,5 +31,8 @@ export class SalesController {
     return this.salesService.findOne(+id);
   }
 
- // generar factura
+  @Post(':id/enviar-factura')
+  async resendInvoice(@Param('id') id: string) {
+    return this.salesService.resendInvoice(+id);
+  }
 }
