@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { PaymentsCredit } from './entities/payments-credit.entity';
 import { CreatePaymentsCreditDto } from './dto/create-payments-credit.dto';
 import { Credit } from '../credits/entities/credit.entity';
+import { StatusCredit } from '../status-credits/entities/status-credit.entity';
 
 @Injectable()
 export class PaymentsCreditsService {
@@ -12,16 +13,59 @@ export class PaymentsCreditsService {
     private readonly paymentsCreditRepository: Repository<PaymentsCredit>,
 
     @InjectRepository(Credit)
-    private readonly creditRepository: Repository<Credit>
+    private readonly creditRepository: Repository<Credit>,
+
+    @InjectRepository(StatusCredit)
+    private readonly statusCreditRepository: Repository<StatusCredit>,
   ) {}
 
+  // registra el abono o pago de credito
   async create(createPaymentsCreditDto: CreatePaymentsCreditDto) {
+    // verificar que el credito exista
+    const credit = await this.creditRepository.findOneBy({ id: createPaymentsCreditDto.creditId });
+    if (!credit) {
+      throw new NotFoundException(`Crédito con id ${createPaymentsCreditDto.creditId} no encontrado`);
+    }
+
+    // Calcular el monto esperado por cuota
+    credit.totalPayments = credit.totalPayments || 1;
+    let expectedAmountPerPayment = (credit.total || 0) / credit.totalPayments;
+    expectedAmountPerPayment = Number(expectedAmountPerPayment.toFixed(2));
+
+    // Validar que el monto pagado no sea menor al esperado
+    const amountPaidRounded = Number(createPaymentsCreditDto.amountPaid.toFixed(2));
+    if (amountPaidRounded < expectedAmountPerPayment) {
+      throw new Error(`El monto pagado (${amountPaidRounded}) es menor al monto esperado por cuota (${expectedAmountPerPayment})`);
+    }
+
     const paymentsCredit = this.paymentsCreditRepository.create({
       credit: { id: createPaymentsCreditDto.creditId } as any,
       amountPaid: createPaymentsCreditDto.amountPaid,
-      dateAmountPaid: createPaymentsCreditDto.dateAmountPaid,
+      dateAmountPaid: createPaymentsCreditDto.dateAmountPaid || new Date(),
     });
-    return this.paymentsCreditRepository.save(paymentsCredit);
+
+    // Actualizar el crédito según el pago registrado
+    credit.paymentCount = (credit.paymentCount || 0) + 1;
+    credit.total = Math.max(0, (credit.total || 0) - createPaymentsCreditDto.amountPaid); // Actualizar el total del crédito
+
+    //estado del credito despues de hacer un pago
+    const pendiente = await this.statusCreditRepository.findOne({ where: { name: 'pendiente' } });
+    const finalizado = await this.statusCreditRepository.findOne({ where: { name: 'finalizado' } });
+
+    // Si el crédito está pagado completamente, actualizar el estado
+    if (credit.total <= 0 || credit.paymentCount >= credit.totalPayments) {
+      if (finalizado) {
+        credit.statusCredit = finalizado; // Cambiar a estado finalizado
+      }
+    } else {
+      if (pendiente) {
+        credit.statusCredit = pendiente; // Mantener o cambiar a estado pendiente
+      }
+    }
+
+    await this.creditRepository.save(credit);
+    await this.paymentsCreditRepository.save(paymentsCredit);
+    return paymentsCredit;
   }
 
   async findAll() {
@@ -63,5 +107,18 @@ export class PaymentsCreditsService {
     const paymentsCredit = await this.findOne(id);
     await this.paymentsCreditRepository.remove(paymentsCredit);
     return paymentsCredit;
+  }
+
+  // Método para obtener el monto esperado por cuota de un crédito dado
+  async getExpectedAmountPerPayment(creditId: number): Promise<number> {
+    const credit = await this.creditRepository.findOneBy({ id: creditId });
+    if (!credit) {
+      throw new NotFoundException(`Crédito con id ${creditId} no encontrado`);
+    }
+    if (!credit.totalPayments || credit.totalPayments === 0) {
+      return Number(credit.total.toFixed(2)); // Si no hay cuotas definidas, el monto es el total
+    }
+    const cuota = (credit.total / credit.totalPayments);
+    return Number(cuota.toFixed(2));
   }
 }

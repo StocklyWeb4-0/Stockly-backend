@@ -63,6 +63,7 @@ export class SalesService {
       const subtotal = Number((product.price * item.quantity).toFixed(2));
       total += subtotal;
 
+      // saleDetails
       const salesDetail = new SalesDetail();
       salesDetail.product = product;
       salesDetail.quantity = item.quantity;
@@ -117,7 +118,7 @@ export class SalesService {
       paymentType.id === creditPaymentType.id &&
       customerId
     ) {
-      //customerEmail sale with credits
+      //customerEmail sale con credit
       const customer = await this.customerRepository.findOne({ where: { id: customerId } });
 
       if(!customer){throw new NotFoundException(`Cliente con id ${customerId} no encontrado`)}
@@ -132,6 +133,7 @@ export class SalesService {
         statuses.find((status) => status.name.toLowerCase() === 'pendiente')
       );
 
+      //Registra informacion en credits de la venta
       await this.creditsService.create({
         customer: { id: customerId },
         sale: { id: savedSale.id },
@@ -139,6 +141,7 @@ export class SalesService {
         amount: total,
         paymentDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         statusCredit: pendingStatus ? { id: pendingStatus.id } : { id: 0 },
+        totalPayments: createSaleDto.totalPayments || 1,
       });
     }
 
@@ -161,8 +164,6 @@ export class SalesService {
         this.logger.error(`Error al enviar factura por correo para la venta ${savedSale.id}: ${error.message}`);
       }
     }
-    // Para ventas no a crédito, la factura se puede enviar opcionalmente por correo (no implementado aquí)
-
     return savedSale;
   }
 

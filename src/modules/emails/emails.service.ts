@@ -32,4 +32,6 @@ export class EmailsService {
       throw error; // Propagar error original para mejor diagnóstico
     }
   }
+
+  //email websockets para pagosCreditos
 }
