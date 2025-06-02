@@ -3,12 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaymentsCredit } from './entities/payments-credit.entity';
 import { CreatePaymentsCreditDto } from './dto/create-payments-credit.dto';
+import { Credit } from '../credits/entities/credit.entity';
 
 @Injectable()
 export class PaymentsCreditsService {
   constructor(
     @InjectRepository(PaymentsCredit)
     private readonly paymentsCreditRepository: Repository<PaymentsCredit>,
+
+    @InjectRepository(Credit)
+    private readonly creditRepository: Repository<Credit>
   ) {}
 
   async create(createPaymentsCreditDto: CreatePaymentsCreditDto) {
@@ -33,6 +37,26 @@ export class PaymentsCreditsService {
       throw new NotFoundException(`Abono de crédito con id ${id} no encontrado`);
     }
     return paymentsCredit;
+  }
+
+  // Historial de pagos de un credito
+  async getPaymentHistory(creditId: number){
+    // verificar que el crdito exista
+    const credit = await this.creditRepository.findOneBy({id: creditId})
+    if (!credit) {
+      throw new NotFoundException(`Crédito con id ${creditId} no encontrado`);
+    }
+    const paymentsHistory = await this.paymentsCreditRepository.find({
+      where: {credit:{id: creditId}},
+      order: { dateAmountPaid: 'ASC'
+      }
+    });
+
+    return paymentsHistory.map((paymentsHistory, index) => ({
+      paymentNumber: index + 1,
+      amountPaid: paymentsHistory.amountPaid,
+      dateAmountPaid: paymentsHistory.dateAmountPaid,
+    }))
   }
 
   async remove(id: number) {

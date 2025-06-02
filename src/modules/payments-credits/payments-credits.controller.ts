@@ -27,6 +27,12 @@ export class PaymentsCreditsController {
     return this.paymentsCreditsService.findOne(id);
   }
 
+  //Hostorial de pagos de un credito
+  @Get('history/:creditId')
+  async getPaymentHistory(@Param('creditId') creditId: number){
+    return this.paymentsCreditsService.getPaymentHistory(creditId)
+  }
+
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.paymentsCreditsService.remove(id);

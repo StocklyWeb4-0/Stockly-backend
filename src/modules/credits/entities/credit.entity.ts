@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
 import { Sale } from '../../sales/entities/sale.entity';
 import { StatusCredit } from '../../status-credits/entities/status-credit.entity';
 
@@ -21,4 +21,13 @@ export class Credit {
 
     @Column({ type: 'date', nullable: true })
     paymentDeadline: Date;
+
+    @CreateDateColumn() //automatico registro fecha
+    createdAt: Date;
+
+    @Column({type: 'int', nullable: true}) // numero de pagos elegidos
+    totalPayments: number;
+
+    @Column({type: 'int', default: 0, nullable: true }) //conteo de pagos
+    paymentCount: number;
 }
