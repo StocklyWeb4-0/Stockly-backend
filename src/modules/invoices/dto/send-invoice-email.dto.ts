@@ -1,7 +1,11 @@
-import { IsEmail, IsOptional } from 'class-validator';
+import { IsEmail, IsOptional, IsBoolean } from 'class-validator';
 
 export class SendInvoiceEmailDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isNonCreditClient?: boolean;
 }

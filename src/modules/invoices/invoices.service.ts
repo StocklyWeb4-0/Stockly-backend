@@ -3,33 +3,27 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Sale } from '../sales/entities/sale.entity';
 import { Repository } from 'typeorm';
 import { createInvoicePdf } from './pdf-generator';
-import * as nodemailer from 'nodemailer';
-import { MailOptions } from 'nodemailer/lib/json-transport';
+// import * as nodemailer from 'nodemailer';
+// import { MailOptions } from 'nodemailer/lib/json-transport';
 import { Invoice } from './entities/invoice.entity';
 import { join } from 'path';
 import { promises as fs } from 'fs';
+import { EmailsService } from '../emails/emails.service';
+import { CustomersService } from '../customers/customers.service';
 
 @Injectable()
 export class InvoicesService {
-  private transporter;
+  // private transporter;
 
   constructor(
     @InjectRepository(Sale)
     private readonly saleRepository: Repository<Sale>,
     @InjectRepository(Invoice)
     private readonly invoiceRepository: Repository<Invoice>,
-  ) {
-    // Configuración del transporte SMTP para nodemailer
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.example.com', // Cambiar por el host SMTP real
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'usuario@example.com', // Cambiar por usuario real
-        pass: 'password', // Cambiar por contraseña real
-      },
-    });
-  }
+    private readonly emailsService: EmailsService,
+    private readonly customersService: CustomersService,
+  ) {}
+
 
   async generatePdf(saleId: number): Promise<Buffer> {
     const sale = await this.saleRepository.findOne({
@@ -88,6 +82,14 @@ export class InvoicesService {
       return { success: false, message: 'No se encontró correo electrónico del cliente' };
     }
 
+    // Verificar que el cliente esté registrado en customers si hay correo
+    if (recipientEmail) {
+      const customerRegistered = await this.customersService.findByEmail(recipientEmail);
+      if (!customerRegistered) {
+        return { success: false, message: 'El correo electrónico no está registrado en la base de datos de clientes' };
+      }
+    }
+
     let pdfBuffer: Buffer;
     try {
       pdfBuffer = await this.generatePdf(saleId);
@@ -95,26 +97,60 @@ export class InvoicesService {
       throw new InternalServerErrorException('Error al generar el PDF de la factura');
     }
 
-    // Texto automatico al enviar correo
-    const mailOptions: MailOptions = {
-      from: '"Distribuidora StocklyWeb" <no-reply@stocklyweb.com>',
-      to: recipientEmail,
-      subject: `Factura de Venta N° ${sale.id}`,
-      text: `Estimado cliente,\n\nAdjuntamos la factura de su compra realizada el ${new Date(sale.date).toLocaleDateString()}.\n\nGracias por su preferencia.\n\nAtentamente,\nDistribuidora StocklyWeb`,
-      attachments: [
-        {
-          filename: `Factura_${sale.id}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ],
-    };
+    return this.emailsService.sendInvoiceEmail({
+      customerEmail: recipientEmail,
+      saleId: saleId,
+      pdfBuffer: pdfBuffer,
+      customerName: sale.customer ? sale.customer.name : 'Cliente',
+    })
+      .then(() => ({ success: true, message: 'Correo enviado correctamente' }))
+      .catch((error) => {
+        return { success: false, message: `Error al enviar el correo electrónico: ${error.message || error}` };
+      });
+  }
+
+  // factura a venta sin credito
+  async resendInvoiceToNonCreditCustomer(saleId: number): Promise<{ success: boolean; message: string }> {
+    const sale = await this.saleRepository.findOne({
+      where: { id: saleId },
+      relations: ['customer', 'user', 'details', 'details.product'],
+    });
+
+    if (!sale) {
+      return { success: false, message: 'Venta no encontrada' };
+    }
+
+    // Para ventas sin crédito, el cliente puede no estar registrado, pero debe tener un correo en la venta
+    const emailToSend = sale.customer?.email || sale.customerEmail;
+    if (!emailToSend) {
+      return { success: false, message: 'No se encontró correo electrónico para enviar la factura' };
+    }
+
+    // Verificar que el cliente esté registrado en customers si hay correo
+    if (emailToSend) {
+      const customerRegistered = await this.customersService.findByEmail(emailToSend);
+      if (!customerRegistered) {
+        return { success: false, message: 'El correo electrónico no está registrado en la base de datos de clientes' };
+      }
+    }
+
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await this.generatePdf(saleId);
+    } catch (error) {
+      return { success: false, message: 'Error al generar el PDF de la factura' };
+    }
 
     try {
-      await this.transporter.sendMail(mailOptions);
-      return { success: true, message: 'Correo enviado correctamente' };
+      await this.emailsService.sendInvoiceEmail({
+        customerEmail: emailToSend,
+        saleId: saleId,
+        pdfBuffer: pdfBuffer,
+        customerName: sale.customer ? sale.customer.name : 'Cliente',
+      });
+      return { success: true, message: 'Factura reenviada correctamente al cliente sin crédito' };
     } catch (error) {
-      throw new InternalServerErrorException('Error al enviar el correo electrónico');
+      return { success: false, message: 'Error al enviar el correo electrónico' };
     }
   }
 

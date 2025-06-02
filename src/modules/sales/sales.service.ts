@@ -95,6 +95,9 @@ export class SalesService {
 
     if (customerId) {
       sale.customer = { id: customerId } as any;
+    } else if (createSaleDto.customerEmail) {
+      // Para ventas sin cliente registrado, guardar el correo en la venta
+      sale.customerEmail = createSaleDto.customerEmail;
     }
 
     const savedSale = await this.saleRepository.save(sale);
@@ -119,11 +122,12 @@ export class SalesService {
 
       if(!customer){throw new NotFoundException(`Cliente con id ${customerId} no encontrado`)}
 
-      // Actualizar la ecnta con el correo del cliente
+      // Actualizar la venta con el correo del cliente
       await this.saleRepository.update(savedSale.id, {
         customerEmail: customer.email,
       })
-
+      
+      // credito a estado pendiente por defecto
       const pendingStatus = await this.statusCreditsService.findAll().then((statuses) =>
         statuses.find((status) => status.name.toLowerCase() === 'pendiente')
       );
@@ -162,6 +166,7 @@ export class SalesService {
     return savedSale;
   }
 
+  // envio posterior de factura de venta
   async resendInvoice(saleId: number): Promise<{ success: boolean; message: string }> {
     const sale = await this.saleRepository.findOne({
       where: { id: saleId },
@@ -185,6 +190,7 @@ export class SalesService {
     }
   }
 
+  // factura por fecha y idUser
   async findAll(filters?: { date?: string; userId?: string }): Promise<Sale[]> {
     const queryBuilder = this.saleRepository.createQueryBuilder('sale')
       .leftJoinAndSelect('sale.user', 'user')

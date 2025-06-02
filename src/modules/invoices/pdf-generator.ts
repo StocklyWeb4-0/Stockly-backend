@@ -11,14 +11,12 @@ export async function createInvoicePdf(sale: Sale): Promise<Buffer> {
       {
         columns: [
           {
-            text: sale.paymentType?.name?.toLowerCase() === 'credito' && sale.customer ? [
+            text: sale.customer ? [
               `Cliente: ${sale.customer.name}`,
               `Correo: ${sale.customer.email}`,
               `Dirección: ${sale.customer.address}`,
             ] : [
-              'Cliente: Consumidor Final',
-              'Correo: -',
-              'Dirección: -',
+              `Correo: ${sale.customerEmail || '-'}`,
             ],
           },
           {

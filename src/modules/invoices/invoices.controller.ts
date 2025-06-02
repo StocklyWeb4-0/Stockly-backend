@@ -31,13 +31,17 @@ export class InvoicesController {
     res.sendFile(invoice.filePath);
   }
 
-  @Post(':id/send-email')
+  @Post(':id/send-invoice')
   async sendInvoiceEmail(@Param('id') id: number, @Body() sendInvoiceEmailDto: SendInvoiceEmailDto) {
     const invoice = await this.invoicesService.findInvoiceById(id);
     if (!invoice) {
       throw new NotFoundException('Factura no encontrada');
     }
     // Enviar correo a email proporcionado o al email del cliente de la venta
-    return this.invoicesService.sendInvoiceEmail(invoice.sale.id, sendInvoiceEmailDto.email);
+    if (sendInvoiceEmailDto.isNonCreditClient) {
+      return this.invoicesService.resendInvoiceToNonCreditCustomer(invoice.sale.id);
+    } else {
+      return this.invoicesService.sendInvoiceEmail(invoice.sale.id, sendInvoiceEmailDto.email);
+    }
   }
 }
