@@ -161,8 +161,6 @@ export class SalesService {
         this.logger.error(`Error al enviar factura por correo para la venta ${savedSale.id}: ${error.message}`);
       }
     }
-    // Para ventas no a crédito, la factura se puede enviar opcionalmente por correo (no implementado aquí)
-
     return savedSale;
   }
 
