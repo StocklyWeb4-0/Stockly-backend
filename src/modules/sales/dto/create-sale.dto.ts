@@ -30,4 +30,8 @@ export class CreateSaleDto {
   @IsOptional()
   @IsString()
   customerEmail?: string;
+
+  @IsOptional()
+  @IsNumber()
+  totalPayments: number;
 }

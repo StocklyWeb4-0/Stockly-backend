@@ -22,6 +22,11 @@ export class PaymentsCreditsController {
     return this.paymentsCreditsService.findAll();
   }
 
+  @Get('expected-amount/:creditId')
+  async getExpectedAmountPerPayment(@Param('creditId') creditId: number) {
+    return this.paymentsCreditsService.getExpectedAmountPerPayment(creditId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.paymentsCreditsService.findOne(id);

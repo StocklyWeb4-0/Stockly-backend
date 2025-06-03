@@ -32,4 +32,20 @@ export class EmailsService {
       throw error; // Propagar error original para mejor diagnóstico
     }
   }
+
+  // Alerta de stock bajo
+  async alertStock(id: number, name: string, stock: number, description: string, email: string){
+    await this.mailerService.sendMail({
+      to: email, // destinatario del email de productService
+      subject: `Stock bajo`,
+      template: './alert-stock',
+      context: {
+        id: id,
+        name: name,
+        stock: stock,
+        description: description,
+        year: new Date().getFullYear(), // copy-> derechos reservados jaja
+      }
+    })
+  }
 }
