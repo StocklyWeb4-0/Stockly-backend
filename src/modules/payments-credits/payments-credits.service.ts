@@ -17,6 +17,7 @@ export class PaymentsCreditsService {
 
     @InjectRepository(StatusCredit)
     private readonly statusCreditRepository: Repository<StatusCredit>,
+    private readonly creditRepository: Repository<Credit>
   ) {}
 
   // registra el abono o pago de credito

@@ -53,8 +53,6 @@ export class ProductsService {
 
   return queryBuilder.getMany();
   }
-
-  // Reducir stock en cada venta
   async reduceStock(id: number, quantity: number): Promise<void> {
     const product = await this.findOne(id);
     if (product.stock < quantity) {
