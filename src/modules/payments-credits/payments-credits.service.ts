@@ -19,7 +19,6 @@ export class PaymentsCreditsService {
 
     @InjectRepository(StatusCredit)
     private readonly statusCreditRepository: Repository<StatusCredit>,
-
     private readonly emailsService: EmailsService,
   ) {}
 
