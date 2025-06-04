@@ -10,9 +10,10 @@
         <h1>Nombre cliente</h1>
         <h2><strong>Confirmacion de pago</strong></h2>
         <div class="product-info">
-            <strong>Fecha de pago:</strong> {{date}}<br /> {{!fecha de pago, ver nombre}}
+            <strong>Fecha de pago:</strong> {{paymentDate}}<br /> {{!fecha de pago, ver nombre}}
             <strong>Valor del pago:</strong> {{amountPaid}}<br />
-            <strong>Fecha de proximo pago</strong> {{dateFind}}<br/> {{! cambiar por fecha limite}}
+            <strong>Fecha de proximo pago</strong> {{nextPaymentDate}}<br/> {{! cambiar por fecha limite}}
+            <strong>ID de pago</strong> {{paymentCreditId}}
         </div>
         <div class="footer">
             &copy; {{year}} StoclyWeb. Todos los derechos reservados
