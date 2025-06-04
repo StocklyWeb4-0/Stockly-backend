@@ -139,7 +139,8 @@ export class SalesService {
         sale: { id: savedSale.id },
         total: total,
         amount: total,
-        paymentDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        // Fecha límite de pago calculada según el número de cuotas (30 días por cuota)
+        paymentDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 * (createSaleDto.totalPayments || 1)),
         statusCredit: pendingStatus ? { id: pendingStatus.id } : { id: 0 },
         totalPayments: createSaleDto.totalPayments || 1,
       });

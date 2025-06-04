@@ -7,8 +7,6 @@ export class EmailsService {
 
   constructor(private readonly mailerService: MailerService){}
 
-  // async sendUserAlertStock (user: User, stock){}
-
   async sendInvoiceEmail(data: SendInvoiceEmailDto): Promise<void> {
     try {
       await this.mailerService.sendMail({
@@ -48,4 +46,21 @@ export class EmailsService {
       }
     })
   }
+
+  // Notifocacion de pago(cuota) de credito
+  async notifyPaymnetCredit(paymentDate: Date, amountPaid: number, nextPaymentDate: Date, paymentCreditId: number, emailCustomer: string){
+    await this.mailerService.sendMail({
+      to: emailCustomer, //correo del cliente
+      subject: `Pago de crédito registrado`,
+      template: './payment-credit',
+      context: {
+        paymentDate: paymentDate.toLocaleDateString(),
+        amountPaid: amountPaid.toFixed(2),
+        nextPaymentDate: nextPaymentDate.toLocaleDateString(),
+        paymentCreditId: paymentCreditId,
+        year: new Date().getFullYear(), // copy-> derechos reservados jaja
+      }
+    })
+  }
+
 }

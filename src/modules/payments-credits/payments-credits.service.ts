@@ -5,6 +5,8 @@ import { PaymentsCredit } from './entities/payments-credit.entity';
 import { CreatePaymentsCreditDto } from './dto/create-payments-credit.dto';
 import { Credit } from '../credits/entities/credit.entity';
 import { StatusCredit } from '../status-credits/entities/status-credit.entity';
+import { MailerService } from '@nestjs-modules/mailer';
+import { EmailsService } from '../emails/emails.service';
 
 @Injectable()
 export class PaymentsCreditsService {
@@ -17,7 +19,7 @@ export class PaymentsCreditsService {
 
     @InjectRepository(StatusCredit)
     private readonly statusCreditRepository: Repository<StatusCredit>,
-    private readonly creditRepository: Repository<Credit>
+    private readonly emailsService: EmailsService,
   ) {}
 
   // registra el abono o pago de credito
@@ -28,10 +30,8 @@ export class PaymentsCreditsService {
       throw new NotFoundException(`Crédito con id ${createPaymentsCreditDto.creditId} no encontrado`);
     }
 
-    // Calcular el monto esperado por cuota
-    credit.totalPayments = credit.totalPayments || 1;
-    let expectedAmountPerPayment = (credit.total || 0) / credit.totalPayments;
-    expectedAmountPerPayment = Number(expectedAmountPerPayment.toFixed(2));
+    // Calcular el monto esperado por cuota usando el método existente
+    const expectedAmountPerPayment = await this.getExpectedAmountPerPayment(createPaymentsCreditDto.creditId);
 
     // Validar que el monto pagado no sea menor al esperado
     const amountPaidRounded = Number(createPaymentsCreditDto.amountPaid.toFixed(2));
@@ -66,7 +66,60 @@ export class PaymentsCreditsService {
 
     await this.creditRepository.save(credit);
     await this.paymentsCreditRepository.save(paymentsCredit);
+    await this.notifyPaymentCredit(credit.id, paymentsCredit.id);
     return paymentsCredit;
+  }
+
+  // fecha para la siguiente cuota
+  async nextPaymentsDate(creditId: number, dateAmountPaid: Date){
+    // verificar que el credito exista
+    const credit = await this.creditRepository.findOneBy({ id: creditId });
+    if (!credit) {
+      throw new NotFoundException(`Crédito con id ${creditId} no encontrado`);
+    }
+
+    // Calcular la fecha de la siguiente cuota
+    const nextPaymentDate = new Date(dateAmountPaid);
+    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1); // Sumar un mes
+
+    return nextPaymentDate;
+  }
+
+  // email pago credito
+  async notifyPaymentCredit(creditId: number, paymentId: number) {
+    const credit = await this.creditRepository.findOne({
+      where: { id: creditId },
+      relations: ['sale', 'sale.customer'],
+    })
+    if(!credit) {
+      throw new NotFoundException(`Crédito con id ${creditId} no encontrado`);
+    }
+
+    // Accede al email de customer a traves de sale
+    const customerEmail = credit.sale?.customer?.email;
+
+    // cliente asocioado al credito
+    if (!customerEmail) {
+      throw new NotFoundException(`El cliente asociado al crédito no tiene un email registrado`);
+    }
+
+    // datos(campos) de paymentCredit
+    const payment = await this.paymentsCreditRepository.findOne({where: {id: paymentId}});
+    if (!payment) {
+      throw new NotFoundException(`Pago con id ${paymentId} no encontrado`);
+    }
+
+    // Obtener la fecha de la siguiente cuota
+    const nextPaymentDate = await this.nextPaymentsDate(creditId, payment.dateAmountPaid);
+
+    // Info del correo .hbs
+    await this.emailsService.notifyPaymnetCredit(
+      payment.dateAmountPaid, 
+      Number(payment.amountPaid), 
+      nextPaymentDate, 
+      paymentId, 
+      customerEmail
+    )
   }
 
   async findAll() {

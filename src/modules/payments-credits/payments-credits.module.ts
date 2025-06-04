@@ -7,12 +7,14 @@ import { CreditsModule } from '../credits/credits.module';
 import { Credit } from '../credits/entities/credit.entity';
 import { StatusCredit } from '../status-credits/entities/status-credit.entity';
 import { StatusCreditsModule } from '../status-credits/status-credits.module';
+import { EmailsModule } from '../emails/emails.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PaymentsCredit, Credit, StatusCredit]),
     CreditsModule,
-    StatusCreditsModule
+    StatusCreditsModule,
+    EmailsModule
   ],
   controllers: [PaymentsCreditsController],
   providers: [PaymentsCreditsService],
