@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Nombre cliente</h1>
+        <h2><strong>Confirmacion de pago</strong></h2>
+        <div class="product-info">
+            <strong>Fecha de pago:</strong> {{paymentDate}}<br /> {{!fecha de pago, ver nombre}}
+            <strong>Valor del pago:</strong> {{amountPaid}}<br />
+            <strong>Fecha de proximo pago</strong> {{nextPaymentDate}}<br/> {{! cambiar por fecha limite}}
+            <strong>ID de pago</strong> {{paymentCreditId}}
+        </div>
+        <div class="footer">
+            &copy; {{year}} StoclyWeb. Todos los derechos reservados
+        </div>
+    </div>
+</body>
+</html>

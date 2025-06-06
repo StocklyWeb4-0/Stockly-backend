@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, QueryBuilder } from 'typeorm';
 import { Usuario } from './entities/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -26,6 +26,17 @@ export class UsersService {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
     return user;
+  }
+
+  async findByNameOrEmail(filters?: {name: string, email: string}): Promise<Usuario[]> {
+    const QueryBuilder = this.userRepository.createQueryBuilder('usuarios');
+    if (filters?.name) {
+      QueryBuilder.andWhere('usuarios.name LIKE :name', { name: `%${filters.name}%` });
+    }
+    if (filters?.email) {
+      QueryBuilder.andWhere('usuarios.email LIKE :email', { email: `%${filters.email}%` });
+    }
+    return QueryBuilder.getMany()
   }
 
   async create(createUserDto: CreateUserDto): Promise<Usuario> {

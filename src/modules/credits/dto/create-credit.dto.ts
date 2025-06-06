@@ -13,4 +13,5 @@ export class CreateCreditDto {
   amount: number;
   paymentDeadline: Date;
   statusCredit: { id: number };
+  totalPayments: number;
 }

@@ -63,6 +63,7 @@ export class SalesService {
       const subtotal = Number((product.price * item.quantity).toFixed(2));
       total += subtotal;
 
+      // saleDetails
       const salesDetail = new SalesDetail();
       salesDetail.product = product;
       salesDetail.quantity = item.quantity;
@@ -79,6 +80,7 @@ export class SalesService {
     sale.paymentType = paymentType;
     sale.details = salesDetails;
 
+    // estado de venta
     if (saleStatusId) {
       const status = await this.saleStatusRepository.findOneBy({ id: saleStatusId });
       if (!status) {
@@ -93,6 +95,7 @@ export class SalesService {
       sale.status = defaultStatus;
     }
 
+    // verifica customer para credito
     if (customerId) {
       sale.customer = { id: customerId } as any;
     } else if (createSaleDto.customerEmail) {
@@ -112,12 +115,13 @@ export class SalesService {
       where: { name: 'Credito' },
     });
 
+    // email del cliente si esta registrado para factura
     if (
       creditPaymentType &&
       paymentType.id === creditPaymentType.id &&
       customerId
     ) {
-      //customerEmail sale with credits
+      //customerEmail sale con credit
       const customer = await this.customerRepository.findOne({ where: { id: customerId } });
 
       if(!customer){throw new NotFoundException(`Cliente con id ${customerId} no encontrado`)}
@@ -132,13 +136,18 @@ export class SalesService {
         statuses.find((status) => status.name.toLowerCase() === 'pendiente')
       );
 
+      //Registra informacion en credits de la venta
       await this.creditsService.create({
         customer: { id: customerId },
         sale: { id: savedSale.id },
         total: total,
         amount: total,
-        paymentDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        // Fecha límite de pago calculada según el número de cuotas (30 días por cuota)
+        paymentDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 * (createSaleDto.totalPayments || 1)),
         statusCredit: pendingStatus ? { id: pendingStatus.id } : { id: 0 },
+        // que las coutas sean pares
+        // totalPayments es el número de pagos que se espera realizar
+        totalPayments: createSaleDto.totalPayments || 1,
       });
     }
 
@@ -161,8 +170,6 @@ export class SalesService {
         this.logger.error(`Error al enviar factura por correo para la venta ${savedSale.id}: ${error.message}`);
       }
     }
-    // Para ventas no a crédito, la factura se puede enviar opcionalmente por correo (no implementado aquí)
-
     return savedSale;
   }
 
@@ -190,7 +197,7 @@ export class SalesService {
     }
   }
 
-  // factura por fecha y idUser
+  // facturas por fecha y idUser
   async findAll(filters?: { date?: string; userId?: string }): Promise<Sale[]> {
     const queryBuilder = this.saleRepository.createQueryBuilder('sale')
       .leftJoinAndSelect('sale.user', 'user')

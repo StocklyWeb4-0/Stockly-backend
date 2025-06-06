@@ -7,8 +7,6 @@ export class EmailsService {
 
   constructor(private readonly mailerService: MailerService){}
 
-  // async sendUserAlertStock (user: User, stock){}
-
   async sendInvoiceEmail(data: SendInvoiceEmailDto): Promise<void> {
     try {
       await this.mailerService.sendMail({
@@ -32,4 +30,37 @@ export class EmailsService {
       throw error; // Propagar error original para mejor diagnóstico
     }
   }
+
+  // Alerta de stock bajo
+  async alertStock(id: number, name: string, stock: number, description: string, email: string){
+    await this.mailerService.sendMail({
+      to: email, // destinatario del email de productService
+      subject: `Stock bajo`,
+      template: './alert-stock',
+      context: {
+        id: id,
+        name: name,
+        stock: stock,
+        description: description,
+        year: new Date().getFullYear(), // copy-> derechos reservados jaja
+      }
+    })
+  }
+
+  // Notifocacion de pago(cuota) de credito
+  async notifyPaymnetCredit(paymentDate: Date, amountPaid: number, nextPaymentDate: Date, paymentCreditId: number, emailCustomer: string){
+    await this.mailerService.sendMail({
+      to: emailCustomer, //correo del cliente
+      subject: `Pago de crédito registrado`,
+      template: './payment-credit',
+      context: {
+        paymentDate: paymentDate.toLocaleDateString(),
+        amountPaid: amountPaid.toFixed(2),
+        nextPaymentDate: nextPaymentDate.toLocaleDateString(),
+        paymentCreditId: paymentCreditId,
+        year: new Date().getFullYear(), // copy-> derechos reservados jaja
+      }
+    })
+  }
+
 }
