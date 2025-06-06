@@ -169,10 +169,21 @@ export class PaymentsCreditsService {
     if (!credit) {
       throw new NotFoundException(`Crédito con id ${creditId} no encontrado`);
     }
-    if (!credit.totalPayments || credit.totalPayments === 0) {
+    const base = Math.floor(credit.total / credit.totalPayments);
+    const decimales = credit.total -(base * credit.totalPayments);
+
+    const valor = Array(credit.totalPayments).fill(base);
+
+    // distribuir los decimales o residuos
+    for (let i = 0; i < decimales; i++) {
+      valor[i] += 1; // Incrementar el valor de la cuota para distribuir los decimales
+    }
+    return valor[0]; // Return the first element as the expected amount per payment
+    
+   /* if (!credit.totalPayments || credit.totalPayments === 0) {
       return Number(credit.total.toFixed(2)); // Si no hay cuotas definidas, el monto es el total
     }
     const cuota = (credit.total / credit.totalPayments);
-    return Number(cuota.toFixed(2));
+    return Number(cuota.toFixed(2));*/
   }
 }

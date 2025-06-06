@@ -80,6 +80,7 @@ export class SalesService {
     sale.paymentType = paymentType;
     sale.details = salesDetails;
 
+    // estado de venta
     if (saleStatusId) {
       const status = await this.saleStatusRepository.findOneBy({ id: saleStatusId });
       if (!status) {
@@ -94,6 +95,7 @@ export class SalesService {
       sale.status = defaultStatus;
     }
 
+    // verifica customer para credito
     if (customerId) {
       sale.customer = { id: customerId } as any;
     } else if (createSaleDto.customerEmail) {
@@ -113,6 +115,7 @@ export class SalesService {
       where: { name: 'Credito' },
     });
 
+    // email del cliente si esta registrado para factura
     if (
       creditPaymentType &&
       paymentType.id === creditPaymentType.id &&
@@ -142,6 +145,8 @@ export class SalesService {
         // Fecha límite de pago calculada según el número de cuotas (30 días por cuota)
         paymentDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 * (createSaleDto.totalPayments || 1)),
         statusCredit: pendingStatus ? { id: pendingStatus.id } : { id: 0 },
+        // que las coutas sean pares
+        // totalPayments es el número de pagos que se espera realizar
         totalPayments: createSaleDto.totalPayments || 1,
       });
     }
