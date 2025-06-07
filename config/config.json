@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "Admin1234*",  
+    "database": "stocklyweb",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "Admin1234*",
+    "database": "stocklyweb_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": "Admin1234*",
+    "database": "stocklyweb_prod",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
