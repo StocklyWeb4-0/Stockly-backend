@@ -24,6 +24,12 @@ export class ProductsController {
     return this.productsService.findAll();
   }
 
+  @Get('category/:categoryId')
+  @Roles(Role.ADMIN, Role.CAJERO)
+  findByCategory(@Param('categoryId') categoryId: string) {
+    return this.productsService.findByCategory(Number(categoryId));
+  }
+
   //Buscar por nombre
   @Get('product-name')
   @Roles(Role.ADMIN, Role.CAJERO)

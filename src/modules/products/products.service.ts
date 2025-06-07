@@ -27,6 +27,12 @@ export class ProductsService {
     return this.productRepository.find();
   }
 
+  async findByCategory(categoryId: number): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder('product');
+    queryBuilder.where('product.idCategory = :categoryId', { categoryId });
+    return queryBuilder.getMany();
+  }
+
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOneBy({ id });
     if (!product) {
