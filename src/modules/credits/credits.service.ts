@@ -18,8 +18,11 @@ export class CreditsService {
   }
 
   async findAll() {
-    return this.creditRepository.find();
+    return this.creditRepository.find({
+      relations: ['sale', 'sale.customer', 'statusCredit'],
+    });
   }
+
 
   async findOne(id: number) {
     const credit = await this.creditRepository.findOneBy({ id });
